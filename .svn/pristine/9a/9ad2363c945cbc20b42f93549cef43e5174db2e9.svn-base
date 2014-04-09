@@ -1,0 +1,33 @@
+package com.utracker;
+
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
+import android.util.Log;
+
+public class Setting {
+	public static final String TAG = "Setting";
+	
+	/**
+	 * Security settings.
+	 */
+	public static boolean trackedEnable= false;
+	//public static boolean notifyOnEscape = true;		
+	public static String password="0000";
+	public static String phoneNumber= "18810666210";
+	
+	public static boolean isURLRequested = true;
+	public static boolean isDetailRequested = true;
+	
+	
+	public static boolean isSMSNotified = false;
+	public static boolean isAutoAnswerCall = false;
+	
+	public static int distance = 1000;//meters
+	public static int trackSpan = 500;
+	
+	public static double scanSpanSec = 1.5;
+	
+	
+
+}

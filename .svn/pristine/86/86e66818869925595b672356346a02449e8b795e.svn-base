@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" 
+    android:key="settings">
+ <!-- 
+    <PreferenceCategory android:title="@string/pref_cat_common_settings" >
+        <EditTextPreference               
+                android:key="prefUsername"/>
+    </PreferenceCategory>
+      -->
+    <PreferenceCategory android:title="@string/pref_cat_security_settings" >
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="trackedEnable"
+            android:summary="@string/pref_tracked_enable_summary"
+            android:title="@string/pref_tracked_enable" >
+        </CheckBoxPreference>
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="requirePassword"
+            android:summary="Require Password when starts"
+            android:title="Password required" >
+        </CheckBoxPreference>
+        <Preference 
+            android:summary="Used for remote tracking" 
+            android:title="Password setting"
+			android:key="password_setting"
+			android:dependency="trackedEnable">
+		</Preference>
+		<EditTextPreference		    	
+                android:title="Tracker phone number"
+                android:summary="You will inform the phone when your position changes" 
+                android:key="trackerPhoneNumber"
+                android:dependency="trackedEnable"/>
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="isURLIncluded"
+            android:summary="Send URL to tracker when out of bound"
+            android:title="URL required"
+            android:dependency="trackedEnable">
+        </CheckBoxPreference>
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="isDetailIncluded"
+            android:summary="Send detail to tracker when out of bound"
+            android:title="Detail required" 
+            android:dependency="trackedEnable">
+        </CheckBoxPreference>
+         <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="showCommandSMS"
+            android:summary="Command SMS will show in sms-inbox as common messages"
+            android:title="Show command SMS ." 
+            android:dependency="trackedEnable">
+        </CheckBoxPreference>
+         <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="autoCallBack"
+            android:summary="Enable call back on certain command"
+            android:title="Auto call back" 
+            android:dependency="trackedEnable">
+        </CheckBoxPreference>
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="autoAnswerCall"
+            android:summary="Enable auto answer call for emergency"
+            android:title="Auto answer call" 
+            android:dependency="trackedEnable">
+        </CheckBoxPreference>
+ 		<!--  
+        <ListPreference
+            android:key="prefSyncFrequency"
+            android:entries="@array/syncFrequency"
+            android:summary="@string/pref_sync_frequency_summary"
+            android:entryValues="@array/syncFrequencyValues"
+            android:title="@string/pref_sync_frequency" />
+            -->
+    </PreferenceCategory>
+    
+    <PreferenceCategory android:title="@string/pref_cat_location_settings" >
+        <EditTextPreference
+            	android:defaultValue="30"
+                android:title="@string/pref_scan_span"
+                android:key="scanSpanSec"
+                android:summary="Frequency of locating (sec/once)"/>
+        <EditTextPreference
+            	android:defaultValue="1000"
+                android:title="Distance limit"
+                android:key="distanceLimit"
+                android:summary="Report tracker if trackee is further from center than the limit "/>
+        <EditTextPreference
+            	android:defaultValue="500"
+                android:title="Track interval"
+                android:key="trackInterval"
+                android:summary="Report tracker when trackee moves over the interval"/>
+        <EditTextPreference
+            	android:defaultValue="116.279009"
+                android:title="Center longitude"
+                android:key="centerLongitude"
+                android:summary="Longitude of center point"/>
+        <EditTextPreference
+            	android:defaultValue="40.160213"
+                android:title="Center latitude"
+                android:key="centerLatitude"
+                android:summary="Latitude of center point"/>        
+    </PreferenceCategory>
+ 
+</PreferenceScreen>

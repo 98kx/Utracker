@@ -1,0 +1,133 @@
+package com.utracker.receiver;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+import com.utracker.LocationApplication;
+import com.utracker.Setting;
+import com.utracker.Util;
+
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
+import android.os.Bundle;
+import android.telephony.SmsMessage;
+import android.util.Log;
+import android.widget.Toast;
+ 
+public class SmsReceiver extends BroadcastReceiver
+{
+    private final String TAG = "SMSReceiver";
+    public static final String SMS_RECEIVED_ACTION = "android.provider.Telephony.SMS_RECEIVED";
+    
+    public static final String SEND_DETAIL_COMMAND = "detail";
+	public static final String SEND_URL_COMMAND = "url";
+	private static final String TRACE_COMMAND = "trace";
+	private static final String CALL_BACK_COMMAND = "callback";
+	private static final String ANSWER_COMMAND = "answer";
+    @Override
+    public void onReceive(Context context, Intent intent) 
+    {
+    	
+    	if(!intent.getAction().equals(SMS_RECEIVED_ACTION)) return;
+    	if(!Setting.trackedEnable) return;
+        //---get the SMS message passed in---
+    	Log.i(TAG, "SMS received");
+        Bundle bundle = intent.getExtras();        
+        SmsMessage[] messages = null;
+        String messageBody = "";            
+        if (bundle != null)
+        {
+            //---retrieve the SMS message received---
+            Object[] pdus = (Object[]) bundle.get("pdus");
+            messages = new SmsMessage[pdus.length];            
+            for (int i=0; i<messages.length; i++){
+                messages[i] = SmsMessage.createFromPdu((byte[])pdus[i]);                
+                messageBody += messages[i].getMessageBody().toString();
+                SimpleDateFormat format=new SimpleDateFormat("yyyy-MM-dd");
+                String time=format.format(new Date());
+                
+                String phoneNumber= messages[i].getOriginatingAddress();
+                
+                testMassageBody(phoneNumber, time,messageBody);
+                               
+                String password = Util.getPasswordFromMessage(messageBody);
+                
+                if(!password.equals(Setting.password)) return;
+                String command = Util.getCommandFromMessage(messageBody);
+                executeCommand(command, phoneNumber);
+                
+                //str += "SMS from " + msgs[i].getOriginatingAddress();                     
+                //str += " :";
+                //
+                //str += "\n";        
+            }
+            //---display the new SMS message---
+            //Toast.makeText(context, str, Toast.LENGTH_SHORT).show();
+        }                         
+    }
+    
+    private void executeCommand(String command, String phoneNumber){
+    	if(command.equals(SEND_DETAIL_COMMAND)
+        		&&Setting.trackedEnable){
+    		LocationApplication.getInstance().notifyMessage("Detail command","From Phone: " 
+        		+ phoneNumber );
+        	LocationApplication.getInstance().getLocationSender()
+        	.sendDetailBySms(phoneNumber,"Î»ÖÃ:\n");
+        	if(!Setting.showCommandSMS)
+        		this.abortBroadcast();
+        }
+        else if(command.equals(SEND_URL_COMMAND)
+        		&&Setting.trackedEnable){
+        	LocationApplication.getInstance().notifyMessage( "URL command","From Phone: " 
+            		+ phoneNumber);
+        	LocationApplication.getInstance().getLocationSender()
+        	.sendURLBySms(phoneNumber);
+        	if(!Setting.showCommandSMS)
+        		this.abortBroadcast();
+        }
+        else if(command.equals(TRACE_COMMAND)
+        		&&Setting.trackedEnable){
+        	LocationApplication.getInstance().notifyMessage( "Trace command","From Phone: " 
+            		+ phoneNumber);
+        	LocationApplication.getInstance().getLocationSender()
+        	.sendTraceBySms(phoneNumber);
+        	if(!Setting.showCommandSMS)
+        		this.abortBroadcast();
+        }
+        else if(command.equals(CALL_BACK_COMMAND)&&
+        		Setting.trackedEnable&&Setting.autoCallBack){
+        	LocationApplication.getInstance().notifyMessage( "Callback command","From Phone: " 
+            		+ phoneNumber);
+        	Intent intent = new Intent(Intent.ACTION_CALL,Uri.parse("tel:"+phoneNumber));  
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        	LocationApplication.getInstance().startActivity(intent); 
+            Log.d(TAG, "Call back");
+            if(!Setting.showCommandSMS)
+        		this.abortBroadcast();
+        }
+        else if(command.equals(ANSWER_COMMAND)&&
+        		Setting.trackedEnable&&Setting.autoAnswerCall){
+        	LocationApplication.getInstance().notifyMessage( "Answer command","From Phone: " 
+            		+ phoneNumber);
+        	PhoneReceiver.answerMe = true;
+        	PhoneReceiver.answerPhoneNumber= phoneNumber.substring(phoneNumber.length()-11,phoneNumber.length());
+        	Log.d(TAG, "Auto answer"+ PhoneReceiver.answerPhoneNumber);
+        	if(!Setting.showCommandSMS)
+        		this.abortBroadcast();
+        }
+        else return;
+    }
+    private void testMassageBody(String phoneNumber, String time,  String messageBody){
+    	if(Util.isTrace(messageBody)){
+    		Log.d(TAG, "Trace Received");
+        	LocationApplication.getInstance().insertTrace(phoneNumber, time, messageBody);
+        	LocationApplication.getInstance().notifyMessage( "Trace received","From Phone: " 
+            		+ phoneNumber);
+        	Toast.makeText(LocationApplication.getInstance(), "Trace received.", Toast.LENGTH_LONG).show();
+        	if(!Setting.showCommandSMS)
+        		this.abortBroadcast();
+        }
+    }
+}

@@ -1,0 +1,195 @@
+package com.utracker;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
+import com.baidu.location.BDLocation;
+
+import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.app.Activity;
+import android.app.ListActivity;
+import android.content.Intent;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.AdapterView;
+import android.widget.Button;
+import android.widget.SimpleAdapter;
+import android.widget.Toast;
+
+public class MainActivity extends ListActivity {
+	//LocationApplication application = null;
+	private final String TAG = "MainActivity";
+	
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		Log.d(TAG,"onCreate");
+		super.onCreate(savedInstanceState);
+		
+		setContentView(R.layout.activity_main);	
+		((LocationApplication)this.getApplication()).main = this;
+		((LocationApplication)getApplication()).start();
+		
+	}	
+	private void requestLocation(){
+		((LocationApplication)this.getApplication()).requestLocation();
+	}
+	/**
+	 * Refresh data in the list according to setting and location.
+	 */
+	public void onGetData(LocationApplication application){				
+		
+		BDLocation loc= application.getLastLocation();
+		if (loc==null) return;
+		
+		ArrayList<Map<String, Object>> data = new ArrayList<Map<String, Object>>();
+		Map<String, Object> item = new HashMap<String, Object>();
+		
+		item.put("title", "Time"); 
+		item.put("body", loc.getTime()+""); 
+		data.add(item); 
+		
+		item = new HashMap<String, Object>(); 
+		item.put("title", "Track Enabled"); 
+		item.put("body", Setting.trackedEnable?"Yes":"No"); 
+		data.add(item); 
+		
+		
+		
+		item = new HashMap<String, Object>(); 
+		item.put("title", "Location frequency"); 
+		item.put("body", "Once per "+Setting.scanSpanSec+" secs"); 
+		data.add(item);
+		
+		
+		item = new HashMap<String, Object>(); 
+		item.put("title", "Address"); 
+		item.put("body",application.getLastAddress()+"");
+		data.add(item); 
+		
+		
+	//	if(loc.hasAltitude()){
+		//	item = new HashMap<String, Object>();
+		//	item.put("title", "Altitude");
+		//	item.put("body",loc.hasAltitude()?loc.getAltitude():null+"");
+		//	data.add(item);
+		//}
+		
+		item = new HashMap<String, Object>();
+		item.put("title", "Latitude & Longitude");
+		item.put("body",loc.getLatitude()+"&"+loc.getLongitude());
+		data.add(item);
+		
+		
+		item = new HashMap<String, Object>();
+		item.put("title", "Radius");
+		item.put("body",loc.hasRadius()?loc.getRadius():null+"");
+		data.add(item);
+		
+		
+		item = new HashMap<String, Object>(); 
+		item.put("title", "Speed");
+		item.put("body",loc.hasSpeed()?loc.getSpeed():null+"");
+		data.add(item);
+		
+		
+	
+	
+		SimpleAdapter adapter = new SimpleAdapter(this, data, android.R.layout.simple_list_item_2,
+				new String[] { "title" ,"body"}, new int[] { android.R.id.text1 , android.R.id.text2 });
+		this.setListAdapter(adapter); 
+		
+	}
+	
+	
+	 @Override
+	    protected void onPause() {
+	      	Log.d(TAG,"Pause");
+	        super.onPause();
+	    }
+	    
+	    @Override
+	    protected void onResume() {
+	    	Log.d(TAG,"Resume");
+	    	((LocationApplication)getApplication()).main = this;
+	        super.onResume();
+	    }
+	    
+	    @Override
+	    protected void onDestroy() {
+	    	Log.d(TAG,"Destroy");
+	    	((LocationApplication)getApplication()).main = null;
+	        super.onDestroy();
+	    }
+	    
+	    @Override
+	    protected void onSaveInstanceState(Bundle outState) {
+	    	Log.d(TAG,"Saveinstance");
+	    	super.onSaveInstanceState(outState);
+	    	
+	    }
+	    
+	    @Override
+	    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+	    	Log.d(TAG,"RestoreInstance");
+	    	super.onRestoreInstanceState(savedInstanceState);
+	    }
+	    
+	   
+	
+	
+	
+	
+	
+	/**
+	 * Menu.
+	 */
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		// Inflate the menu; this adds items to the action bar if it is present.
+		getMenuInflater().inflate(R.menu.main, menu);
+		return true;
+	}
+	
+	public boolean onOptionsItemSelected(MenuItem item){
+		switch(item.getItemId()){
+		case R.id.menu_settings:
+			//Intent i = new Intent(MainActivity.this,UserSettingActivity.class);
+			//startActivity(i);
+			break;
+			
+		case R.id.menu_refresh:
+			requestLocation();
+			break;
+			
+	//	case R.id.menu_start:
+			
+	//		break;
+	//	case R.id.menu_stop:
+			
+	//		break;
+		case R.id.menu_exit:
+			//((LocationApplication)getApplication()
+			this.finish();
+			((LocationApplication)getApplication()).stop();
+			//((LocationApplication)getApplication()).exit();
+			//System.exit(0);
+			break;
+		case R.id.menu_viewmap:	
+			//String s=UserSettingActivity.pref.getString("scanSpanSec", "Not found");	
+			//PreferenceManager.getDefaultSharedPreferences(this).getString("scanSpanSec", "Not found");	
+	    	String s = Setting.scanSpanSec+"";
+			Log.i(TAG,s);
+			Log.i(TAG,"########");
+			
+			break;
+		
+		}
+		return super.onOptionsItemSelected(item);
+	}
+
+}

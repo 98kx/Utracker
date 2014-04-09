@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Utracker</string>
+    
+    <string name="menu_settings">Settings</string>
+    <string name="menu_viewmap">View Map</string>
+    <string name="menu_refresh">Refresh</string>
+    <string name="menu_start">Start service</string>
+    <string name="menu_stop">Stop service</string>
+    <string name="menu_exit">Exit</string>
+    
+    <string name="dialog_oldkey">Enter old password:</string>
+    <string name="dialog_newkey">Enter new password:</string>
+    
+    <string name= "button_ok">OK</string>
+    <string name ="button_cancel">Cancel</string>
+    
+    
+    <string name="hello_world">Hello world!</string>
+    <string name="title_activity_map">Map</string>
+    <string name="title_activity_setting">Settings</string>
+    <string name="action_settings">Settings</string>
+    
+    <string name="pref_cat_common_settings">COMMON SETTINGS</string>
+  
+    <string name="pref_cat_security_settings">SECURITY SETTINGS</string>
+    <string name="pref_trusted_phone_number">Trustable phone number</string>
+    <string name="pref_tracked_enable">Tracked Enable</string>
+    <string name="pref_tracked_enable_summary">When true, your location can be tracked</string>
+    <string name="pref_auto_receive">Auto receive</string>
+    <string name="pref_include_detail">Include Detail</string>
+    <string name="pref_include_url">Include URL</string>
+    
+    <string name="pref_cat_location_settings">LOCATION SETTINGS</string>
+    <string name="pref_scan_span">Scan span</string>
+    <string name="pref_center_longitude">Center longitude</string>
+    <string name="pref_center_latitude">Center latitude</string>
+    <string name="pref_distance_limit">Distance limit</string>
+    
+
+</resources>

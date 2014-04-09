@@ -1,0 +1,373 @@
+package com.utracker.activity;
+
+
+import java.util.ArrayList;
+
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.content.DialogInterface.OnClickListener;
+import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.graphics.drawable.Drawable;
+import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.widget.Toast;
+
+import com.baidu.location.BDLocation;
+import com.baidu.mapapi.map.LocationData;
+import com.baidu.mapapi.map.MapController;
+import com.baidu.mapapi.map.MapView;
+import com.baidu.mapapi.map.MyLocationOverlay;
+import com.baidu.mapapi.map.OverlayItem;
+import com.baidu.mapapi.map.RouteOverlay;
+import com.baidu.mapapi.search.MKRoute;
+import com.baidu.platform.comapi.basestruct.GeoPoint;
+import com.utracker.LocationApplication;
+import com.utracker.MyOverlay;
+import com.utracker.R;
+import com.utracker.Setting;
+import com.utracker.TracePoint;
+import com.utracker.Util;
+import com.utracker.R.drawable;
+import com.utracker.R.id;
+import com.utracker.R.layout;
+import com.utracker.R.menu;
+
+
+public class MapActivity extends Activity{
+		private final String TAG = "MapActivity";
+		static MapView mMapView = null;
+		/*
+		public static int STATE = 0;
+		public static final int LOCATION_MODE = 0;
+		public static final int MY_TRACE_MODE = 1;
+		public static final int TRACKEE_TRACE_MODE = 2;
+		*/
+		private boolean traceMode = false;
+		
+		public boolean settingCenter = false;
+		@Override
+        public void onCreate(Bundle savedInstanceState){
+        	super.onCreate(savedInstanceState);       	
+        	setContentView(R.layout.activity_map);
+        	LocationApplication.getInstance().map = null;
+        	
+        	mMapView = (MapView) findViewById(R.id.bmapView);
+        	//mMapView.setLongClickable(true);
+        	//mMapView.setOnLongClickListener(null);        	
+        	mMapView.setBuiltInZoomControls(true);
+        	mMapView.setAnimationCacheEnabled(true);  
+        	mMapView.getController().setCenter(new GeoPoint((int)(Setting.centerLatitude*1e6) ,(int) (Setting.centerLongitude*1e6)));
+            mMapView.getController().setZoom(16);
+        	this.traceMode = false;   
+        	((LocationApplication)this.getApplication()).requestLocation();
+        	Log.d(TAG, "Init map");        	
+        	//mMapView.getController().setCenter(new GeoPoint((int)(locData.latitude* 1e6), (int)(locData.longitude *  1e6)));
+        	
+        }
+	
+        public class MyLocationData extends LocationData{
+        	public MyLocationData(){
+        		super();
+        	}
+        	public MyLocationData(BDLocation loc){
+        		super();
+        		this.latitude = loc.getLatitude();
+        		this.longitude = loc.getLongitude();
+        		this.direction = loc.getDerect();
+        		this.accuracy = loc.getRadius();
+        	}
+        	
+        	public void setLocationData(BDLocation loc){
+        		this.latitude = loc.getLatitude();
+        		this.longitude = loc.getLongitude();
+        		this.direction = loc.getDerect();
+        		this.accuracy = loc.getRadius();
+        	}
+        	
+        	public GeoPoint getGeoPoint(){
+        			return new GeoPoint((int)(this.latitude*1e6),
+        					(int)(this.longitude*1e6));
+           	}
+        }
+        /*
+        @Override
+        public boolean onTouchEvent(MotionEvent event){
+        	//mMapView.getProjection().fromPixels(event.getX(), event.getY())
+			Toast.makeText(this, "Touched",Toast.LENGTH_SHORT)
+			.show();
+			return super.onTouchEvent(event);
+        	        	
+        }*/
+      
+        
+        @Override
+        protected void onDestroy(){
+                mMapView.destroy();
+                LocationApplication.getInstance().map = null;
+                super.onDestroy();
+        }
+        @Override
+        protected void onPause(){
+                mMapView.onPause();
+                super.onPause();
+        }
+        @Override
+        protected void onResume(){
+                mMapView.onResume();
+                LocationApplication.getInstance().map = this;
+                super.onResume();
+        }
+        
+       
+        
+        
+        
+        @Override
+    	public boolean onCreateOptionsMenu(Menu menu) {
+    		// Inflate the menu; this adds items to the action bar if it is present.
+    		getMenuInflater().inflate(R.menu.map, menu);
+    		return true;
+    	}
+    	
+    	public boolean onOptionsItemSelected(MenuItem item){
+    		switch(item.getItemId()){
+    		case R.id.map_menu_refresh: 
+    			this.traceMode= false;
+    			((LocationApplication)this.getApplication()).requestLocation();
+    			    
+    		break;
+    		
+    		case R.id.map_menu_setScreenCenter:
+    			//GeoPoint center = mMapView.getMapCenter();
+    			//setTrackCenter((double)center.getLatitudeE6()/1000000.0, 
+    			//		(double)center.getLongitudeE6()/1000000.0);
+    			this.settingCenter = true;
+    			Toast.makeText(this,"Tap the screen to set center",Toast.LENGTH_SHORT)
+    			.show();
+    			break;
+    			
+    		case R.id.map_menu_viewMyTrace:
+    			this.traceMode = true;
+    			viewMyTrace();
+    			//this.testViewmytrace();
+    			break;
+    			
+    		case R.id.map_menu_viewTrackeeTrace:
+    			this.traceMode = true;
+    			viewTrackeeTrace();
+    			break;
+    		}
+    		return super.onOptionsItemSelected(item);
+    	}
+    	
+    	
+    	 public void OnGetLocation(){
+    		if(this.traceMode) return;
+    		    		
+         	BDLocation location = LocationApplication.getInstance().getLastLocation();
+         	if(location ==null) return;
+         	MyLocationData locData = new MyLocationData(location);
+          //     Log.d("loctest",String.format("before: lat: %f lon: %f", location.getLatitude(),location.getLongitude()));
+         	mMapView.getOverlays().clear();
+    		MyLocationOverlay myLocationOverlay = null;
+         	myLocationOverlay = new MyLocationOverlay(mMapView);
+        	myLocationOverlay.enableCompass(); 
+         	myLocationOverlay.setData(locData);
+         	MapController mMapController=mMapView.getController();
+         	mMapController.animateTo(locData.getGeoPoint());
+         	
+         	Drawable marker = getResources().getDrawable(R.drawable.main_map_icon_streetscape_selected);
+     	    MyOverlay centerOverlay = new MyOverlay(marker, this);
+     	    centerOverlay.addItem(getCenterItem());
+
+            mMapView.getOverlays().add(myLocationOverlay);
+            mMapView.getOverlays().add(centerOverlay);
+         	mMapView.refresh();
+         	 
+         }
+    	private void viewMyTrace(){
+    		Log.d(TAG,"View Trace");
+    		//TraceOverlay routeOverlay = new TraceOverlay(this, mMapView);
+    		
+    		//OverlayItem item= new OverlayItem(new GeoPoint(lat,lon),"item"+i,"item"+i);
+    		//getResources().getDrawable(R.drawable.icon_markc);
+    	    
+    	    Drawable marker = getResources().getDrawable(R.drawable.user_center_address_icon);
+    	    MyOverlay pointOverlay = new MyOverlay(marker, this);
+    	    
+    	    Cursor cursor = LocationApplication.getInstance().getDBLocations();
+    	    cursor.moveToFirst();
+    		int length = cursor.getCount();
+    		TracePoint[] route = new TracePoint[length];
+    		for(int i = length-1 ;i>=0 ;i--){
+    			route[i]= new TracePoint(cursor);
+    			OverlayItem item= new OverlayItem(route[i],route[i].getInfo(),"item"+i);
+    			pointOverlay.addItem(item);
+    			if(!cursor.moveToNext())break;
+    			}
+    		cursor.close();
+    		pointOverlay.addItem(getCenterItem());
+    		
+    		MKRoute mr = new MKRoute();
+    		mr.customizeRoute(route[0],route[length-1], route);
+    		
+    		RouteOverlay routeOverlay = new RouteOverlay(this ,mMapView);
+		    routeOverlay.setData(mr);
+    		
+    		//TraceRoute tr = new TraceRoute(LocationApplication.getInstance().getDBLocations());
+		    
+		    mMapView.getOverlays().clear();
+		    mMapView.getOverlays().add(routeOverlay);
+		    mMapView.getOverlays().add(pointOverlay);
+		    mMapView.refresh();
+		    mMapView.getController().zoomToSpan(routeOverlay.getLatSpanE6(), routeOverlay.getLonSpanE6());
+		    mMapView.getController().animateTo(mr.getStart());
+    	}
+    	
+    	
+    	
+    	private void showTrackeeTrace(Cursor cursor , int position){
+    		
+    		 cursor.moveToPosition(position);
+    		 
+    		 String msg = cursor.getString(3);
+    		ArrayList<GeoPoint> geoList = Util.strlistToTrace(msg);
+    		int len = geoList.size();
+    		Drawable marker = getResources().getDrawable(R.drawable.user_center_address_icon);
+    	    MyOverlay pointOverlay = new MyOverlay(marker, this);
+    	        	    
+    		GeoPoint[] geoPoint = new GeoPoint[len];
+    		for(int i = len-1;i>=0; i--){
+    			geoPoint[i]= new GeoPoint(geoList.get(len-1-i).getLatitudeE6(),geoList.get(len-1-i).getLongitudeE6());
+    			OverlayItem item= new OverlayItem(geoPoint[i],"Longitude: "+geoPoint[i].getLongitudeE6()/1000000.0+"\nLatitude: "+geoPoint[i].getLatitudeE6()/1000000.0,"item"+i);
+    			pointOverlay.addItem(item);	
+    			Log.d(TAG, geoPoint[i].getLatitudeE6()+" "+geoPoint[i].getLongitudeE6()+"");
+    		}
+    		
+    		pointOverlay.addItem(getCenterItem());
+    		
+    		MKRoute mr = new MKRoute();
+    		mr.customizeRoute(geoPoint[0],geoPoint[len-1], geoPoint);
+    		
+    		RouteOverlay routeOverlay = new RouteOverlay(this ,mMapView);
+		    routeOverlay.setData(mr);
+    		
+    		//TraceRoute tr = new TraceRoute(LocationApplication.getInstance().getDBLocations());
+		    
+		    
+		    Log.d(TAG, "ClearOverlay");
+		    mMapView.getOverlays().clear();
+		    mMapView.getOverlays().add(routeOverlay);
+		    mMapView.getOverlays().add(pointOverlay);
+		    mMapView.refresh();
+		    mMapView.getController().zoomToSpan(routeOverlay.getLatSpanE6(), routeOverlay.getLonSpanE6());
+		    mMapView.getController().animateTo(mr.getStart());
+    	}
+    	private void viewTrackeeTrace(){
+    		/*
+    		AlertDialog.Builder bld = new AlertDialog.Builder(this);
+    		
+    		final EditText phoneNumber = new EditText(this);
+    		phoneNumber.setInputType(InputType.TYPE_CLASS_NUMBER);
+    		
+    		bld.setTitle("Enter trackee phone number")
+    		.setView(phoneNumber)
+    		.setPositiveButton("OK", new DialogInterface.OnClickListener(){			
+    			@Override
+    			public void onClick(DialogInterface dialog, int which) {
+    				
+    					Toast.makeText(MapActivity.this, "Location scan span is set "+Setting.scanSpanSec+" second", Toast.LENGTH_SHORT)
+    					.show();
+    							
+    			}
+    			
+    		})
+    		.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+    			
+    			@Override
+    			public void onClick(DialogInterface dialog, int which) {
+    				// TODO Auto-generated method stub
+    				dialog.cancel();
+    			}
+    		})
+    		.show();
+    		*/
+    		//Intent i = new Intent(this, TraceActivity.class);
+    		//startActivity(i);
+    		final Cursor cursor = LocationApplication.getInstance().getDBTraces();
+    	    cursor.moveToFirst();
+    	       	    
+    	    int length = cursor.getCount();
+    	    String[] itemList = new String[length];    	    
+    	    
+    	    for(int i =0 ;i<length;i++){
+    	    	itemList[i] = cursor.getString(2)+" "+ cursor.getString(1);   			
+    	    	if(!cursor.moveToNext())break;
+   			}
+    	    
+    	    
+    	    new AlertDialog.Builder(this).setTitle("Choose a trace")
+    	    .setIcon(
+    	    	     android.R.drawable.ic_dialog_info)
+    	    .setSingleChoiceItems(
+    	    	     itemList, 0,
+    	    	     new DialogInterface.OnClickListener() {
+    	    	      public void onClick(DialogInterface dialog, int which) {
+    	    	       //dialog.dismiss();
+    	    	    	  showTrackeeTrace(cursor, which);    	    	    	  
+    	    	      }
+    	    	     })
+    	    .setNegativeButton("OK",new OnClickListener(){
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+					// TODO Auto-generated method stub
+					dialog.dismiss();
+				}
+    	    	
+    	    })
+    	   .show();
+    	    
+    	    
+    	   // this.showTrackeeTrace(msg);
+    	}
+    	
+    	
+    	public void setTrackCenter(double lat, double lon){
+    		if(!this.settingCenter) return;
+    		boolean succ = true;
+    		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(LocationApplication.getInstance());
+    		pref.edit()
+    		.putString("centerLongitude", lon+"")
+    		.putString("centerLatitude", lat+"")
+    		.commit();
+    		try {
+				Setting.initLocationSettings(getApplication());
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				succ = false;
+				e.printStackTrace();
+			}
+    		if(succ){
+    			Toast.makeText(this,"Track center is set ("+lon+","+lat+") successfully.",Toast.LENGTH_SHORT)
+    			.show();
+    			this.settingCenter= false;
+    		}
+		
+    	}
+    	
+    	private OverlayItem getCenterItem(){
+    		Drawable marker = getResources().getDrawable(R.drawable.nav_turn_via_1);
+    	    OverlayItem item= new OverlayItem(new GeoPoint((int)(Setting.centerLatitude*1e6) ,(int) (Setting.centerLongitude*1e6)),
+    	    						"Center: ("+ Setting.centerLongitude+" , "+Setting.centerLatitude+")"
+    	    						+"\n"+ "Distance from your position: " + LocationApplication.getInstance().getCenterDistance()+"m",
+    	    						"centeritem");
+			item.setMarker(marker);
+			return item;
+    	}
+
+}

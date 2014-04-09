@@ -1,0 +1,85 @@
+package com.utracker;
+
+public class Util {
+	/**
+	 * Gets distance using latitude and longitude.
+	 */
+	private final static double EARTH_RADIUS = 6378137.0;//meters
+	private static double rad(double d)
+	{
+	   return d * Math.PI / 180.0;
+	}
+
+	public static double GetDistance(double lat1, double lng1, double lat2, double lng2)
+	{
+	   double radLat1 = rad(lat1);
+	   double radLat2 = rad(lat2);
+	   double a = radLat1 - radLat2;
+	   double b = rad(lng1) - rad(lng2);
+	   double s = 2 * Math.asin(Math.sqrt(Math.pow(Math.sin(a/2),2) + 
+	    Math.cos(radLat1)*Math.cos(radLat2)*Math.pow(Math.sin(b/2),2)));
+	   s = s * EARTH_RADIUS;
+	   s = Math.round(s * 10000) / 10000.0;
+	   return s;
+	}
+	
+	/**
+	 * Encrypts password
+	 * @param inStr
+	 * @return
+	 */
+	 public static String encrypt(String inStr) {  
+		  // String s = new String(inStr);  
+		  char[] a = inStr.toCharArray();  
+		  for (int i = 0; i < a.length; i++) {  
+		   a[i] = (char) (a[i] ^ 't');  
+		  }   
+		  return new String(a);  
+		 } 
+	public static String decrypt(String inStr) {  
+		char[] a = inStr.toCharArray();  
+		for (int i = 0; i < a.length; i++) {  
+			a[i] = (char) (a[i] ^ 't');  
+		}  			  
+		return new String(a);  
+	}
+	
+	public static String getPasswordFromMessage(String msg){
+		int separator = msg.indexOf("#");
+		if(separator==-1)	return "";
+		else return msg.substring(0, separator);
+	}
+	
+	public static String getCommandFromMessage(String msg){
+		int separator = msg.indexOf("#");
+		if(separator == -1) return "";
+		else return msg.substring(separator+1);
+	}
+	public static boolean isPhoneNumber(String str){
+		if(str.length()<11||str.length()>16) return false;
+		for(int i= 0 ;i<str.length();i++ ){
+			if(str.charAt(i)!='+'&& (str.charAt(i)>'9'||str.charAt(i)<'0'))
+				return false;
+		}
+		return true;
+	}
+	
+	public static String makeSMS(String str1,String str2,String str3,
+			String str4){
+		return str1+"\n"
+				+str2+"\n"
+				+str3+"\n"
+				+str4+"\n";
+	}
+	
+	//public static final int URL_CENTER = 0 ;
+	public static String makeURLCenter(double lon, double lat){
+		return "http://api.map.baidu.com/staticimage?"
+				+"width=400&height=300" +
+				"&center="+lon+","+lat+
+				"&zoom=15" +
+				"&markers="+lon+","+lat+
+				"&markerStyles=s,";
+	
+	}
+}

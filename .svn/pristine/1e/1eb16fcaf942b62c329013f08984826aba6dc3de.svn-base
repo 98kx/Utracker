@@ -1,0 +1,274 @@
+package com.utracker;
+
+import android.content.Context;
+import android.content.IntentFilter;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
+import android.util.Log;
+import android.widget.Toast;
+import android.app.Application;
+import com.baidu.location.BDLocation;
+import com.baidu.location.BDLocationListener;
+import com.baidu.location.LocationClient;
+import com.baidu.location.LocationClientOption;
+import com.baidu.location.BDNotifyListener;
+import com.baidu.mapapi.BMapManager;
+import com.baidu.mapapi.MKGeneralListener;
+import com.baidu.mapapi.map.MKEvent;
+
+
+import com.baidu.platform.comapi.basestruct.GeoPoint;
+
+public class LocationApplication extends Application{
+	private static LocationApplication mInstance = null;
+	private String TAG = "LocationApplication";
+	
+	private BMapManager bMapManager = null;
+	public static final String strKey = "05CA829B3973E806E8F15FB6023963AB0A20B076";
+		
+	private LocationClient bLocationClient = null;	
+	private BDLocation lastLocation = null;
+	private String lastAddress = "";	
+	
+	private LocationSender locationSender= null;
+	public MainActivity main = null;
+	public MapActivity map = null;
+	
+	public static int counter = 0;
+	public void onCreate() {
+		super.onCreate();
+		mInstance = this;
+		/**
+		 * Initial MapManager
+		 */
+		if(bMapManager==null)
+			bMapManager = new BMapManager(this);
+		bMapManager.init(strKey, new MyGeneralListener());
+		/**
+		 * Settings are loaded from preference files.
+		 */
+		try {
+			Setting.refreshSettingsFromPref(this);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		/**
+		 * Register BroadcastReceiver. 
+		 */
+		IntentFilter filter = new IntentFilter(SmsReceiver.SMS_RECEIVED_ACTION);  
+	    filter.setPriority(2147483647); 
+		SmsReceiver smsReceiver = new SmsReceiver();
+		registerReceiver(smsReceiver, filter); 
+		
+		PhoneReceiver phoneReceiver = new PhoneReceiver();  
+	    IntentFilter intentFilter = new IntentFilter();  
+	    intentFilter.addAction(PhoneReceiver.B_PHONE_STATE);  
+	    intentFilter.setPriority(Integer.MAX_VALUE);  
+	    registerReceiver(phoneReceiver, intentFilter);
+		
+	    /**
+	     * Initial location sender.
+	     */
+	    
+	    locationSender = new LocationSender(this);
+	    
+	    
+		/**
+		 * Initials location client.
+		 */
+	    if(bLocationClient==null)
+	    	bLocationClient = new LocationClient(this);		
+		bLocationClient.setLocOption(getDefaultClientOption());		
+		bLocationClient.registerLocationListener(new MyLocationListenner());
+		
+	}
+	private LocationClientOption getDefaultClientOption(){
+		LocationClientOption option = new LocationClientOption();		
+		option.setAddrType("all");
+		option.setPriority(LocationClientOption.GpsFirst);
+		option.disableCache(true);
+		option.setOpenGps(true);
+		option.setScanSpan((int) (Setting.scanSpanSec*1000));
+		option.setCoorType("bd09ll");
+		return option;
+	}
+	
+	public void requestLocation(){
+		if(bLocationClient!=null)
+			bLocationClient.requestLocation();
+	}
+	/**
+	 * Exit application.
+	 */
+	public void startClient(){
+		if(bLocationClient !=null&& !bLocationClient.isStarted())
+			bLocationClient.start();
+	}
+	public void stopClient(){
+		if(bLocationClient !=null&& bLocationClient.isStarted()) 
+			bLocationClient.stop();
+	}
+	public void exit(){
+		Setting.trackedEnable = false;
+		if(bMapManager!=null) bMapManager.destroy();
+		stopClient();
+	}
+	
+	 static class MyGeneralListener implements MKGeneralListener {
+	        
+	        @Override
+	        public void onGetNetworkState(int iError) {
+	            if (iError == MKEvent.ERROR_NETWORK_CONNECT) {
+	                Toast.makeText(LocationApplication.getInstance().getApplicationContext(), "Network connection error",
+	                    Toast.LENGTH_LONG).show();
+	            }
+	            else if (iError == MKEvent.ERROR_NETWORK_DATA) {
+	                Toast.makeText(LocationApplication.getInstance().getApplicationContext(), "Network data error",
+	                        Toast.LENGTH_LONG).show();
+	            }
+	            // ...
+	        }
+
+	        @Override
+	        public void onGetPermissionState(int iError) {
+	            if (iError ==  MKEvent.ERROR_PERMISSION_DENIED) {
+	                Toast.makeText(LocationApplication.getInstance().getApplicationContext(), 
+	                        "Invalid Key£¡", Toast.LENGTH_LONG).show();
+	                
+	            }
+	        }
+	    }
+	/**
+	 * Listener for Location client.
+	 */
+	public class MyLocationListenner implements BDLocationListener{
+
+		@Override
+		public void onReceiveLocation(BDLocation location) {
+			
+			//Log.i(TAG,"Counter "+LocationApplication.counter++);			
+		
+			
+			//Log.i(TAG,"########");
+			//if(Setting.isScanSpanChanged){
+			//	setScanSpan(Setting.scanSpanSec);
+			//}
+						
+			if(location==null){
+				Log.d("getLocation","try again");
+				return;
+			}
+			/**
+			 * Updates location info and refresh Main activity.
+			 */
+			lastLocation = location;				
+			if (location.hasAddr())	lastAddress = location.getAddrStr();
+			Log.i(TAG,lastLocation.getTime()+lastAddress);
+			if(main!=null) main.onGetData();
+			if(map!=null) map.refreshLocation();
+			/**
+			 * Sends warning and switches running mode.
+			 */
+			if(isLocationChanged()&&Setting.trackedEnable){
+				// Send SMS warning to tracker
+				if(BuildConfig.DEBUG)Log.i(TAG, "SENDING SMS");
+				if(Setting.isDetailIncluded)
+					locationSender.sendDetailBySms(Setting.trackerPhoneNumber);
+				if(Setting.isURLIncluded)
+					locationSender.sendURLBySms(Setting.trackerPhoneNumber);
+				
+			}
+			
+			
+		}
+
+		@Override
+		public void onReceivePoi(BDLocation arg0) {
+			// TODO Auto-generated method stub
+			
+		}
+		
+	};
+	
+	/**
+	 * Gets instance of Application
+	 * @return
+	 */
+	public static LocationApplication getInstance(){
+		return mInstance;
+	}
+	
+	public LocationSender getLocationSender(){
+		return this.locationSender;
+	}
+	
+	
+	public boolean isStarted(){
+		return bLocationClient.isStarted();
+	}
+	
+	
+	public BDLocation getLastLocation(){
+		return this.lastLocation;
+	}
+	public String getLastAddress(){
+		return this.lastAddress;
+	}
+	
+	public void setScanSpan(double span){
+		bLocationClient.getLocOption().setScanSpan((int) (span*1000));
+		//Setting.isScanSpanChanged= false;
+	}
+	
+	
+	
+	public  static final int MONITOR_MODE = 0 ;
+	public static final int TRACK_MODE = 1;
+	public  int runMode = 0;
+	private double lastCenterLongitude=0;
+	private double lastCenterLatitude=0;
+	
+	private void updateLastCenter(){
+		lastCenterLongitude = lastLocation.getLongitude();
+		lastCenterLatitude = lastLocation.getLatitude();
+	}
+	public double getCenterDistance(){
+		return Util.GetDistance(lastLocation.getLatitude(), 
+				lastLocation.getLongitude(),
+				Setting.centerLatitude,
+				Setting.centerLongitude);
+	}
+	public double getIntervalDistance(){
+		return  Util.GetDistance(lastLocation.getLatitude(), 
+				lastLocation.getLongitude(),
+				lastCenterLatitude,
+				lastCenterLongitude);
+	}
+	private boolean isLocationChanged(){
+		if(runMode==MONITOR_MODE){			
+	//	double r = lastLocation.hasRadius()? lastLocation.getRadius()/2.0:0;
+			if(getCenterDistance()>Setting.distanceLimit) {
+				runMode = TRACK_MODE;
+				updateLastCenter();
+				return true;
+			}
+			else return false;
+			
+		}else if(runMode==TRACK_MODE){			
+			if(getCenterDistance()<Setting.distanceLimit)
+				runMode = MONITOR_MODE;			
+			if(getIntervalDistance()>Setting.trackInterval){
+				updateLastCenter();
+				return true;
+			}
+			else return false;
+			
+		}else return false;
+	}
+	
+	
+
+
+}

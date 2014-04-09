@@ -1,0 +1,167 @@
+package com.utracker;
+
+import com.baidu.location.BDLocation;
+
+import android.content.ContentValues;
+import android.content.Context;
+import android.database.Cursor;
+import android.database.SQLException;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
+
+public class DatabaseHelper extends SQLiteOpenHelper{	
+	private static final String TAG = "DatabaseHelper";
+
+	private static final String DATABASE_NAME = "traceData.db";
+	private static final int DATABASE_VERSION = 1;
+	
+	private static final String TABLE_LOCATIONS = "locations";
+	private static final String ID = "_id";
+	public static final String LONGITUDE = "longitude";
+	public static final String LATITUDE = "latitude";
+	public  static final String TIME= "time";
+	public static final String ADDRESS = "address";
+	public static final String RADIUS = "radius";
+	public static final String SPEED = "speed";
+	
+	private static final String TABLE_TRACES = "traces";
+	private static final String PHONENUMBER = "phoneNumber";
+	//private static final String TIME = "time";
+	private static final String TRACE = "trace";
+	
+	private SQLiteDatabase database =null;
+		
+	public DatabaseHelper(Context context) {
+			super(context, DATABASE_NAME, null, DATABASE_VERSION);
+	}
+	
+	public void open(){
+		//SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(
+			//		LocationApplication.getInstance());
+		//pref.getInt("currentID", 0);
+		//TEST IT
+		
+		/*Thread t = new Thread(){
+			@Override
+			public void run(){
+				
+				Log.i(TAG, "DB opened");
+			}
+		};
+		t.start();
+		*/
+		database = getWritableDatabase();
+	 	//onUpgrade(database, 0,0);
+	}
+	
+	@Override
+	public void close(){
+		//SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(
+		//		LocationApplication.getInstance());
+		//pref.edit()
+		//.putInt("currentID", currentID)
+		//.commit();
+		
+		super.close();
+		Log.i(TAG, "DB closed");
+		
+	}
+	public boolean isOpened(){
+		if (database==null) return false;
+		else return	database.isOpen();
+	}
+	@Override
+	public void onCreate(SQLiteDatabase db) {
+		String sql = "CREATE TABLE " + DatabaseHelper.TABLE_LOCATIONS + " (" 
+		+ DatabaseHelper.ID	+ " INTEGER primary key autoincrement, " 		
+		+ DatabaseHelper.LONGITUDE + " DOUBLE ,"
+		+ DatabaseHelper.LATITUDE + " DOUBLE ," 		
+		+ DatabaseHelper.TIME	+ " text , " 	
+		+ DatabaseHelper.ADDRESS + " text ,"
+		+ DatabaseHelper.RADIUS +" DOUBLE ,"
+		+ DatabaseHelper.SPEED +" DOUBLE "	
+		+ ");";	
+		//Log.i(TAG, tracks_sql);
+		db.execSQL(sql);
+		sql = "CREATE TABLE " + DatabaseHelper.TABLE_TRACES + " (" 
+				+ DatabaseHelper.ID	+ " INTEGER primary key autoincrement, " 		
+			 	+ DatabaseHelper.PHONENUMBER+ " text , "	
+			 	+ DatabaseHelper.TIME + " text ,"
+				+ DatabaseHelper.TRACE	+ " text "
+				+ ");";	
+		db.execSQL(sql);
+
+	}
+	
+	/**
+	 * Gets last 10 records.
+	 * @return
+	 * @throws SQLException
+	 */
+	public Cursor getLocation(int length) throws SQLException {
+		Log.d(TAG, "Get location from DB");
+		Cursor mCursor =
+		//db.query(true, TABLE_NAME, new String[] { ID, TIME,
+		//		LATITUDE, LONGITUDE, ADDRESS,SPEED , RADIUS }, ID + "=" + rowId, null, null,
+		//		null, null, null);
+		//db.query(TABLE_NAME, null, null, null, null, null, ID, "10");
+		database.query(true, TABLE_LOCATIONS, null, null, null, null, null, ID+" desc" , " "+length+" ");
+		if (mCursor != null) {
+			mCursor.moveToFirst();
+		}
+		return mCursor;
+	}
+	public Cursor getTrace() throws SQLException {
+		Log.d(TAG, "Get Trace from DB");
+		Cursor mCursor =
+		//db.query(true, TABLE_NAME, new String[] { ID, TIME,
+		//		LATITUDE, LONGITUDE, ADDRESS,SPEED , RADIUS }, ID + "=" + rowId, null, null,
+		//		null, null, null);
+		//db.query(TABLE_NAME, null, null, null, null, null, ID, "10");
+		database.query(true, TABLE_TRACES, null, null, null, null, null, ID+" desc" , null);
+		if (mCursor != null) {
+			mCursor.moveToFirst();
+		}
+		return mCursor;
+	}
+
+	@Override
+	public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+		db.execSQL("DROP TABLE IF EXISTS " + DatabaseHelper.TABLE_LOCATIONS + ";");	
+		db.execSQL("DROP TABLE IF EXISTS " + DatabaseHelper.TABLE_TRACES + ";");	
+		Log.d(TAG, "DB upgrade");
+		onCreate(db);
+	}
+	
+	public boolean deleteLocate(long rowId) {
+		return database.delete(TABLE_LOCATIONS, ID + "=" + rowId, null) > 0;
+	}
+	
+	
+	public long insertLocation(BDLocation loc) throws SQLException  {
+		Log.d(TAG, "Insert location");
+		ContentValues initialValues = new ContentValues();
+		//initialValues.put(ID, currentID++);		
+		initialValues.put(TIME, loc.getTime());
+		initialValues.put(LONGITUDE, loc.getLongitude());
+		initialValues.put(LATITUDE, loc.getLatitude());
+		initialValues.put(RADIUS, loc.hasRadius()?loc.getRadius():-1);
+		initialValues.put(SPEED, loc.hasSpeed()?loc.getSpeed():-1);	
+		initialValues.put(ADDRESS, loc.hasAddr()?loc.getAddrStr():"");
+		return database.insert(TABLE_LOCATIONS, null, initialValues);
+	}
+	
+	public long insertTrace(String phoneNumber,String time,  String msg){
+		Log.d(TAG, "Insert Trace");
+		ContentValues initialValues = new ContentValues();
+		//initialValues.put(ID, currentID++);		
+		initialValues.put(PHONENUMBER, phoneNumber);
+		initialValues.put(TIME, time);
+		initialValues.put(TRACE, msg);
+		return database.insert(TABLE_TRACES, null, initialValues);
+	}
+	
+
+	
+}

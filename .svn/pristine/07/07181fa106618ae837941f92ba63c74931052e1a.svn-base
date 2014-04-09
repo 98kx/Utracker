@@ -1,0 +1,229 @@
+package com.utracker;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
+import com.baidu.location.BDLocation;
+
+import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.app.Activity;
+import android.app.ListActivity;
+import android.content.Intent;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.AdapterView;
+import android.widget.Button;
+import android.widget.SimpleAdapter;
+import android.widget.Toast;
+
+public class MainActivity extends ListActivity {
+	//LocationApplication application = null;
+	private final String TAG = "MainActivity";
+	
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		Log.d(TAG,"onCreate");
+		super.onCreate(savedInstanceState);
+		
+		setContentView(R.layout.activity_main);	
+		((LocationApplication)this.getApplication()).main = this;
+		((LocationApplication)getApplication()).startClient();
+		showLoadingText();
+		
+	}
+	
+	/**
+	 * Display loading message before location information arrives.
+	 */
+	private void showLoadingText(){
+		ArrayList<Map<String, Object>> data = new ArrayList<Map<String, Object>>();
+		Map<String, Object> item = new HashMap<String, Object>();
+		
+		item.put("title", "Loading...."); 
+		item.put("body", "Make sure network or GPS is available. If no responding for long, try clicking \"Refresh\" Button or restart application."); 
+		data.add(item); 
+		
+		SimpleAdapter adapter = new SimpleAdapter(this, data, android.R.layout.simple_list_item_2,
+				new String[] { "title" ,"body"}, new int[] { android.R.id.text1 , android.R.id.text2 });
+		this.setListAdapter(adapter); 
+	}
+	/**
+	 * Send location request to LocationApplication.
+	 */
+	private void requestLocation(){
+		((LocationApplication)this.getApplication()).requestLocation();
+	}
+		
+	/**
+	 * Call back when gaining location info.
+	 * @param application
+	 */
+	public void onGetData(){				
+		LocationApplication application = LocationApplication.getInstance();
+		BDLocation loc= application.getLastLocation();
+		if (loc==null){
+			return;
+		}
+		
+		ArrayList<Map<String, Object>> data = new ArrayList<Map<String, Object>>();
+		Map<String, Object> item = new HashMap<String, Object>();
+		
+		item.put("title", "Time"); 
+		item.put("body", loc.getTime()+""); 
+		data.add(item); 
+		
+		item = new HashMap<String, Object>(); 
+		item.put("title", "Track Enabled"); 
+		item.put("body", Setting.trackedEnable?"Yes":"No"); 
+		data.add(item); 
+		
+		item = new HashMap<String, Object>(); 
+		item.put("title", "Running Mode");
+		item.put("body",(application.runMode==LocationApplication.MONITOR_MODE)?"Monitor mode":
+			(application.runMode==LocationApplication.TRACK_MODE)?"Track mode":
+				""
+			);
+		data.add(item);
+		
+		item = new HashMap<String, Object>(); 
+		item.put("title", "Location frequency & Accuracy"); 
+		item.put("body", Setting.scanSpanSec+"sec/once & "+ (loc.hasRadius()?(loc.getRadius()+" m"):null)+"" ); 
+		data.add(item);
+		
+		
+		item = new HashMap<String, Object>(); 
+		item.put("title", "Address"); 
+		item.put("body",application.getLastAddress()+"");
+		data.add(item); 
+		
+		
+	//	if(loc.hasAltitude()){
+		//	item = new HashMap<String, Object>();
+		//	item.put("title", "Altitude");
+		//	item.put("body",loc.hasAltitude()?loc.getAltitude():null+"");
+		//	data.add(item);
+		//}
+		
+		item = new HashMap<String, Object>();
+		item.put("title", "Longitude & Latitude");
+		item.put("body","("+loc.getLongitude()+" , "+loc.getLatitude()+")");
+		data.add(item);	
+		
+		item = new HashMap<String, Object>(); 
+		item.put("title", "Speed");
+		item.put("body",loc.hasSpeed()?loc.getSpeed():null+"");
+		data.add(item);	
+		
+		
+		
+		if(application.runMode==LocationApplication.MONITOR_MODE){
+			item = new HashMap<String, Object>(); 
+			item.put("title", "Distance from center");
+			item.put("body",application.getCenterDistance()+"");
+			data.add(item);
+		}else if(application.runMode==LocationApplication.TRACK_MODE){
+			item = new HashMap<String, Object>(); 
+			item.put("title", "Distance from center & last point");
+			item.put("body",application.getCenterDistance()+"m & "+ application.getIntervalDistance()+"m");
+			data.add(item);
+		}
+	
+	
+		SimpleAdapter adapter = new SimpleAdapter(this, data, android.R.layout.simple_list_item_2,
+				new String[] { "title" ,"body"}, new int[] { android.R.id.text1 , android.R.id.text2 });
+		this.setListAdapter(adapter); 
+		
+	}
+	
+	
+	 @Override
+	    protected void onPause() {
+	      	Log.d(TAG,"Pause");
+	        super.onPause();
+	    }
+	    
+	    @Override
+	    protected void onResume() {
+	    	Log.d(TAG,"Resume");
+	    	((LocationApplication)getApplication()).main = this;
+	        super.onResume();
+	    }
+	    
+	    @Override
+	    protected void onDestroy() {
+	    	Log.d(TAG,"Destroy");
+	    	((LocationApplication)getApplication()).main = null;
+	        super.onDestroy();
+	    }
+	    
+	    @Override
+	    protected void onSaveInstanceState(Bundle outState) {
+	    	Log.d(TAG,"Saveinstance");
+	    	super.onSaveInstanceState(outState);
+	    	
+	    }
+	    
+	    @Override
+	    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+	    	Log.d(TAG,"RestoreInstance");
+	    	super.onRestoreInstanceState(savedInstanceState);
+	    }
+	    
+	   
+	
+	
+	
+	
+	
+	/**
+	 * Menu.
+	 */
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		// Inflate the menu; this adds items to the action bar if it is present.
+		getMenuInflater().inflate(R.menu.main, menu);
+		return true;
+	}
+	
+	public boolean onOptionsItemSelected(MenuItem item){
+		switch(item.getItemId()){
+		case R.id.menu_settings:
+			Intent intentSetting = new Intent(MainActivity.this,SettingActivity.class);
+			startActivity(intentSetting);
+			break;
+			
+		case R.id.menu_refresh:
+			requestLocation();
+			break;
+			
+	//	case R.id.menu_start:
+			
+	//		break;
+	//	case R.id.menu_stop:
+			
+	//		break;
+		case R.id.menu_exit:
+			//((LocationApplication)getApplication()
+			this.finish();			
+			((LocationApplication)getApplication()).exit();
+			//((LocationApplication)getApplication()).exit();
+			//System.exit(0);
+			break;
+		case R.id.menu_viewmap:	
+			//String s=UserSettingActivity.pref.getString("scanSpanSec", "Not found");	
+			//PreferenceManager.getDefaultSharedPreferences(this).getString("scanSpanSec", "Not found");	
+	    	//sLocationApplication.getInstance().getLocationSender().sendSMS(null,null);
+			Intent intentMap= new Intent(MainActivity.this,MapActivity.class);
+			startActivity(intentMap);
+			break;
+		
+		}
+		return super.onOptionsItemSelected(item);
+	}
+
+}

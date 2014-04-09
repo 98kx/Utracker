@@ -1,0 +1,31 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <item
+        android:id="@+id/map_menu_refresh"
+        android:orderInCategory="0"
+        android:showAsAction="never"
+        android:title="View my location"/>
+    <!--   <item
+        android:id="@+id/map_menu_setMyLocCenter"
+        android:orderInCategory="0"
+        android:showAsAction="never"
+        android:title="@string/menu_setMyLocationCenter"/> -->
+      <item
+        android:id="@+id/map_menu_setScreenCenter"
+        android:orderInCategory="0"
+        android:showAsAction="never"
+        android:title="Set center"/>
+     
+      <item
+        android:id="@+id/map_menu_viewMyTrace"
+        android:orderInCategory="0"
+        android:showAsAction="never"
+        android:title="View my trace"/>
+      <item
+        android:id="@+id/map_menu_viewTrackeeTrace"
+        android:orderInCategory="0"
+        android:showAsAction="never"
+        android:title="View trackee trace"/>
+    
+
+</menu>

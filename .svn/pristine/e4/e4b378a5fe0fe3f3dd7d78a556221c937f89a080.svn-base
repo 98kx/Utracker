@@ -1,0 +1,42 @@
+package com.utracker.receiver;
+
+
+import com.utracker.LocationApplication;
+import com.utracker.activity.MainActivity;
+
+import com.utracker.*;
+
+
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.widget.Toast;
+
+public class BootReceiver extends BroadcastReceiver{
+	
+	static final String action_boot="android.intent.action.BOOT_COMPLETED"; 
+	 
+	public static final String action_first_start = "BootReceiver.START";
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        if (intent.getAction().equals(action_boot)){ 
+        	//Intent i = new Intent("com.utracker.AutoStartService");
+        	//i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        	//context.startService(i);
+        	
+        	
+        	Intent ootStartIntent=new Intent(LocationApplication.getInstance().getApplicationContext(),MainActivity.class); 
+            ootStartIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            ootStartIntent.setAction(BootReceiver.action_first_start);
+            context.startActivity(ootStartIntent); 
+            
+            //Toast.makeText(context, "STARTED"+ LocationApplication.getInstance().isStarted(), 
+            //			Toast.LENGTH_LONG)
+            //			.show();
+        }
+ 
+    }
+
+}

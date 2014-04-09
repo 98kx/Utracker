@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.utracker"
+    android:versionCode="1"
+    android:versionName="1.0" >
+
+    <uses-sdk
+        android:minSdkVersion="8"
+        android:targetSdkVersion="17" />
+
+    <application
+        android:name=".LocationApplication"
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@android:style/Theme.Black" >
+        <activity
+            android:name="com.utracker.activity.MainActivity"
+            android:launchMode="singleTask"
+            android:label="@string/app_name" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+         <activity
+            android:name="com.utracker.activity.SettingActivity"
+            android:launchMode="singleTask"
+            android:label="@string/title_activity_setting" >            
+        </activity>
+       
+       	<activity
+            android:name="com.utracker.activity.MapActivity"
+            android:launchMode="singleTask"
+            android:label="@string/title_activity_map"
+            android:configChanges="orientation|keyboardHidden" > 
+        <!--     android:screenOrientation="sensor" -->
+        	           
+        </activity>
+      
+       
+        <service android:name="com.baidu.location.f" android:enabled="true"
+			android:process=":remote">
+		</service>
+		<service android:name="com.utracker.AutoStartService" android:enabled="true">
+			<!-- android:process=":remote" -->
+		</service>
+		<receiver android:name="com.utracker.receiver.BootReceiver"> 
+        <intent-filter android:priority="1000"> 
+        <action android:name="android.intent.action.BOOT_COMPLETED" /> 
+        <category android:name="android.intent.category.HOME" />
+        </intent-filter> 
+    </receiver> 
+		
+    </application>
+    
+	<supports-screens android:largeScreens="true"
+	    android:normalScreens="false" android:smallScreens="true"
+	    android:resizeable="true" android:anyDensity="true"/>
+    
+
+    <!--使用网络功能所需权限  -->
+	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE">
+	</uses-permission>
+	<uses-permission android:name="android.permission.INTERNET">
+	</uses-permission>
+	<uses-permission android:name="android.permission.ACCESS_WIFI_STATE">
+	</uses-permission>
+	<uses-permission android:name="android.permission.CHANGE_WIFI_STATE">
+	</uses-permission>
+	<!-- SDK离线地图和cache功能需要读写外部存储器 -->
+	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE">
+	</uses-permission>
+	<!-- 获取设置信息和详情页直接拨打电话需要以下权限  -->
+	<uses-permission android:name="android.permission.READ_PHONE_STATE">
+	</uses-permission>
+	<uses-permission android:name="android.permission.CALL_PHONE">
+	</uses-permission>
+	<!-- 使用定位功能所需权限 -->
+	<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION">
+	</uses-permission>
+	<permission android:name="android.permission.BAIDU_LOCATION_SERVICE">
+	</permission>
+	<uses-permission android:name="android.permission.BAIDU_LOCATION_SERVICE">
+	</uses-permission>
+	<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION">
+	</uses-permission>
+	<uses-permission android:name="android.permission.ACCES_MOCK_LOCATION">
+	</uses-permission>
+	<uses-permission android:name="android.permission.ACCESS_GPS"/>
+	<!-- SMS command -->
+	<uses-permission android:name="android.permission.SEND_SMS">
+    </uses-permission>
+	<uses-permission android:name="android.permission.RECEIVE_SMS">
+    </uses-permission>
+    <!-- Auto answer call -->
+    　　<uses-permission android:name="android.permission.CALL_PHONE"/>
+	<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
+	<!-- Auto start -->
+	<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED">
+	</uses-permission>
+	<!-- Notification -->
+	<uses-permission android:name="android.permission.VIBRATE" />
+</manifest>
